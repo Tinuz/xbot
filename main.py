@@ -12,7 +12,7 @@ TWITTER_API_SECRET = os.getenv("TWITTER_API_SECRET")
 TWITTER_ACCESS_TOKEN = os.getenv("TWITTER_ACCESS_TOKEN")
 TWITTER_ACCESS_SECRET = os.getenv("TWITTER_ACCESS_SECRET")
 
-# === 1. Bereken geplande posttijd met random offset ===
+""" # === 1. Bereken geplande posttijd met random offset ===
 offset_minutes = random.randint(-10, 10)
 now = datetime.datetime.now()
 next_hour = now.replace(minute=0, second=0, microsecond=0) + datetime.timedelta(hours=1)
@@ -37,11 +37,11 @@ if wait_seconds > 0:
         exit()
 
 else:
-    print("⏩ Tijdstip ligt al in het verleden, ga meteen door.\n")
+    print("⏩ Tijdstip ligt al in het verleden, ga meteen door.\n") """
 
 # === 3. Google Sheets setup ===
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-creds = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
+creds = ServiceAccountCredentials.from_json_keyfile_name('creds.json', scope)
 gs_client = gspread.authorize(creds)
 
 spreadsheet = gs_client.open("Foorfur X Campaign")
@@ -65,9 +65,22 @@ client = tweepy.Client(
 )
 
 try:
+    # Tweet plaatsen
     response = client.create_tweet(text=message)
-    print("✅ Tweet geplaatst met ID:", response.data["id"])
-    sheet.update_cell(row_number, 2, 'TRUE')
-    print("📌 Post gemarkeerd als geplaatst.")
+    tweet_id = response.data["id"]
+
+    # Gebruikersnaam ophalen om URL te bouwen
+    user_response = client.get_me()
+    username = user_response.data.username
+    tweet_url = f"https://twitter.com/{username}/status/{tweet_id}"
+
+    print("✅ Tweet geplaatst met ID:", tweet_id)
+    print("🔗 URL:", tweet_url)
+
+    # Sheet bijwerken: kolom 2 = 'Placed', kolom 3 = 'Url'
+    sheet.update_cell(row_number, 2, 'TRUE')  # 'Placed'
+    sheet.update_cell(row_number, 3, tweet_url)  # 'Url'
+    print("📌 Sheet bijgewerkt.")
+
 except Exception as e:
     print("❌ Fout bij tweeten:", e)
