@@ -41,7 +41,7 @@ else:
 
 # === 3. Google Sheets setup ===
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-creds = ServiceAccountCredentials.from_json_keyfile_name('creds.json', scope)
+creds = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
 gs_client = gspread.authorize(creds)
 
 spreadsheet = gs_client.open("Foorfur X Campaign")
