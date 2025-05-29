@@ -6,7 +6,7 @@ __pycache__/
 .env
 venv/
 .envrc
-creds.json
+credentials.json
 
 # macOS
 .DS_Store

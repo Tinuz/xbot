@@ -7,10 +7,14 @@ import datetime
 import os
 from dotenv import load_dotenv
 
+load_dotenv()
+
 TWITTER_API_KEY = os.getenv("TWITTER_API_KEY")
 TWITTER_API_SECRET = os.getenv("TWITTER_API_SECRET")
 TWITTER_ACCESS_TOKEN = os.getenv("TWITTER_ACCESS_TOKEN")
 TWITTER_ACCESS_SECRET = os.getenv("TWITTER_ACCESS_SECRET")
+
+print(TWITTER_API_KEY)
 
 """ # === 1. Bereken geplande posttijd met random offset ===
 offset_minutes = random.randint(-10, 10)
