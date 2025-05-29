@@ -4,6 +4,16 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import time
 import datetime
+import os
+from dotenv import load_dotenv
+
+# === .env laden ===
+load_dotenv()
+
+TWITTER_API_KEY = os.getenv("TWITTER_API_KEY")
+TWITTER_API_SECRET = os.getenv("TWITTER_API_SECRET")
+TWITTER_ACCESS_TOKEN = os.getenv("TWITTER_ACCESS_TOKEN")
+TWITTER_ACCESS_SECRET = os.getenv("TWITTER_ACCESS_SECRET")
 
 # === 1. Bereken geplande posttijd met random offset ===
 offset_minutes = random.randint(-10, 10)
@@ -32,35 +42,31 @@ if wait_seconds > 0:
 else:
     print("⏩ Tijdstip ligt al in het verleden, ga meteen door.\n")
 
-# === 2. Google Sheets setup ===
+# === 3. Google Sheets setup ===
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-creds = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)  # ← service account bestand
-client = gspread.authorize(creds)
+creds = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
+gs_client = gspread.authorize(creds)
 
-spreadsheet = client.open("Foorfur X Campaign")  # ← pas aan
+spreadsheet = gs_client.open("Foorfur X Campaign")
 sheet = spreadsheet.sheet1
 
-# Haal alle waarden op
-rows = sheet.get_all_records()  # lijst van dicts
-available_posts = [(i + 2, row['Post']) for i, row in enumerate(rows) if not row['Placed']]  # +2: skip header + 1-based index
+rows = sheet.get_all_records()
+available_posts = [(i + 2, row['Post']) for i, row in enumerate(rows) if not row['Placed']]
 
 if not available_posts:
-    print("Geen ongebruikte berichten meer.")
+    print("⚠️ Geen ongebruikte berichten meer.")
     exit()
 
-# Kies willekeurige ongebruikte post
 row_number, message = random.choice(available_posts)
 
-# === 3. Twitter (X) API setup ===
-# Twitter API v2 client (werkt met Free tier)
+# === 4. X (Twitter) API setup ===
 client = tweepy.Client(
-    consumer_key="jUEuC0G5RK2ve1wcpThATfReK",
-    consumer_secret="2IMvvIIizvTptGP3hG57CDrF0AlL3b3OsLEclFRcwxhlfdsbMi",
-    access_token="1923829352946376704-A7tdOzl5LV1C6FlOE6m9imNMmdrCa6",
-    access_token_secret="fw06vF6rkya333L6ZcGEN2I11xOxEpmD4pbWBVpsVmNdR"
+    consumer_key=TWITTER_API_KEY,
+    consumer_secret=TWITTER_API_SECRET,
+    access_token=TWITTER_ACCESS_TOKEN,
+    access_token_secret=TWITTER_ACCESS_SECRET
 )
 
-# Bericht posten via v2
 try:
     response = client.create_tweet(text=message)
     print("✅ Tweet geplaatst met ID:", response.data["id"])
