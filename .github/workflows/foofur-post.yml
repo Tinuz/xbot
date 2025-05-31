@@ -2,7 +2,7 @@ name: Foofur Tweet Bot
 
 on:
   schedule:
-    - cron: '45 * * * *'  # Elke uur op het hele uur (UTC)
+    - cron: '0 */2 * * *'  # Elke 2 uur op het hele uur (UTC)
   workflow_dispatch:      # Handmatig starten via GitHub UI
 
 jobs:
