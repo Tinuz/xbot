@@ -1,88 +1,65 @@
-import random
 import tweepy
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
-import time
-import datetime
+import openai
 import os
-from dotenv import load_dotenv
 
-#load_dotenv()
+from dotenv import load_dotenv
+load_dotenv()
+
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 TWITTER_API_KEY = os.getenv("TWITTER_API_KEY")
 TWITTER_API_SECRET = os.getenv("TWITTER_API_SECRET")
 TWITTER_ACCESS_TOKEN = os.getenv("TWITTER_ACCESS_TOKEN")
 TWITTER_ACCESS_SECRET = os.getenv("TWITTER_ACCESS_SECRET")
 
-""" # === 1. Bereken geplande posttijd met random offset ===
-offset_minutes = random.randint(-10, 10)
-now = datetime.datetime.now()
-next_hour = now.replace(minute=0, second=0, microsecond=0) + datetime.timedelta(hours=1)
-scheduled_time = next_hour + datetime.timedelta(minutes=offset_minutes)
+print("Twitter: " + TWITTER_API_KEY)
 
-# === 2. Toon geplande tijd en start countdown ===
-wait_seconds = int((scheduled_time - now).total_seconds())
 
-if wait_seconds > 0:
-    print(f"⏰ Bericht wordt geplaatst om: {scheduled_time.strftime('%H:%M:%S')}")
-    print(f"⌛ Start aftellen ({wait_seconds} seconden):\n")
-
+def generate_tweet():
+    prompt = "Write a random short and absurd tweet, in the voice of Foofur."
+    # API-call naar OpenAI
     try:
-        for remaining in range(wait_seconds, 0, -1):
-            mins, secs = divmod(remaining, 60)
-            time_display = f"{mins:02d}:{secs:02d}"
-            print(f"\r⏳ Tijd tot post: {time_display}", end="")
-            time.sleep(1)
-        print("\n🟢 Tijd om te posten!\n")
-    except KeyboardInterrupt:
-        print("\n⛔ Aftellen onderbroken door gebruiker.")
-        exit()
+        response = openai.responses.create(
+            model="gpt-4o",
+            instructions="You are Foofur, a confused blue dog who accidentally created a memecoin by shoving his chew toy into a toaster. You tweet in third person with a dry, ironic tone. Your posts parody Web3 culture, always sound confident and clueless at the same time, and often reference absurd mechanics like token burns, fake utility, or shill quests. Keep it short, weird, and satirical. Never explain the joke. No hashtags unless part of the joke. Use $FOOF when relevant. Tone: self-aware, deadpan, chaotic, and a little broken.",
+            input=prompt,
+            max_output_tokens=140,
+            temperature=0.7
+        )
 
-else:
-    print("⏩ Tijdstip ligt al in het verleden, ga meteen door.\n") """
+        # Print resultaat
+        tweet = tweet = response.output[0].content[0].text
+        return tweet
 
-# === 3. Google Sheets setup ===
-scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-creds = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
-gs_client = gspread.authorize(creds)
-
-spreadsheet = gs_client.open("Foorfur X Campaign")
-sheet = spreadsheet.sheet1
-
-rows = sheet.get_all_records()
-available_posts = [(i + 2, row['Post']) for i, row in enumerate(rows) if not row['Placed']]
-
-if not available_posts:
-    print("⚠️ Geen ongebruikte berichten meer.")
-    exit()
-
-row_number, message = random.choice(available_posts)
+    except Exception as e:
+        print("Error generating tweet:", e)
+        return None
 
 # === 4. X (Twitter) API setup ===
 client = tweepy.Client(
     consumer_key=TWITTER_API_KEY,
     consumer_secret=TWITTER_API_SECRET,
     access_token=TWITTER_ACCESS_TOKEN,
-    access_token_secret=TWITTER_ACCESS_SECRET
-)
-
+    access_token_secret=TWITTER_ACCESS_SECRET)
 try:
     # Tweet plaatsen
-    response = client.create_tweet(text=message)
-    tweet_id = response.data["id"]
+    message = generate_tweet()
 
-    # Gebruikersnaam ophalen om URL te bouwen
-    user_response = client.get_me()
-    username = user_response.data.username
-    tweet_url = f"https://twitter.com/{username}/status/{tweet_id}"
+    if message:
+        response = client.create_tweet(text=message)
+        tweet_id = response.data["id"]
 
-    print("✅ Tweet geplaatst met ID:", tweet_id)
-    print("🔗 URL:", tweet_url)
+        # Gebruikersnaam ophalen om URL te bouwen
+        user_response = client.get_me()
+        username = user_response.data.username
+        tweet_url = f"https://twitter.com/{username}/status/{tweet_id}"
 
-    # Sheet bijwerken: kolom 2 = 'Placed', kolom 3 = 'Url'
-    sheet.update_cell(row_number, 2, 'TRUE')  # 'Placed'
-    sheet.update_cell(row_number, 3, tweet_url)  # 'Url'
-    print("📌 Sheet bijgewerkt.")
+        print("✅ Tweet geplaatst met ID:", tweet_id)
+        print("🔗 URL:", tweet_url)
+    else:
+        print("❌ Geen tweet gegenereerd, dus niet gepost.")
 
+except Exception as e:
+    print("❌ Fout bij tweeten:", e)
 except Exception as e:
     print("❌ Fout bij tweeten:", e)
