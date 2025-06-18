@@ -5,15 +5,13 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
-
 TWITTER_API_KEY = os.getenv("TWITTER_API_KEY")
 TWITTER_API_SECRET = os.getenv("TWITTER_API_SECRET")
 TWITTER_ACCESS_TOKEN = os.getenv("TWITTER_ACCESS_TOKEN")
 TWITTER_ACCESS_SECRET = os.getenv("TWITTER_ACCESS_SECRET")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-print("Twitter: " + TWITTER_API_KEY)
-
+openai.api_key = OPENAI_API_KEY
 
 def generate_tweet():
     prompt = "Write a random short and absurd tweet, in the voice of Foofur."
